@@ -14,19 +14,26 @@ import com.huertohogar.huertohogar_app.screen.HomeScreen
 import com.huertohogar.huertohogar_app.screen.CategoriaScreen 
 import com.huertohogar.huertohogar_app.screen.DetalleProductoScreen
 import com.huertohogar.huertohogar_app.screen.CartScreen
+import com.huertohogar.huertohogar_app.screen.CheckoutScreen
+import com.huertohogar.huertohogar_app.screen.ProfileScreen
+import com.huertohogar.huertohogar_app.screen.PedidosScreen
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
+import com.huertohogar.huertohogar_app.viewmodel.UserViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     productViewModel: ProductViewModel
 ) {
+    val userViewModel: UserViewModel = viewModel()
+
     NavHost(navController, startDestination = "splash") {
         composable("splash") { SplashScreen(navController) }
         composable("intro") { IntroScreen(navController) }
         composable("login") { LoginScreen(navController) }
         composable("register") { RegisterScreen(navController) }
-        composable("home") { HomeScreen(navController, productViewModel) }
+        composable("home") { HomeScreen(navController, productViewModel, userViewModel) }
         composable(
             "categoria/{categoria}",
             arguments = listOf(navArgument("categoria") { type = NavType.StringType })
@@ -35,12 +42,15 @@ fun AppNavGraph(
             CategoriaScreen(navController, categoria, productViewModel)
         }
         composable(
-            "detalle_producto/{productId}",
-            arguments = listOf(navArgument("productId") { type = NavType.LongType })
+            "detalle_producto/{productSku}",
+            arguments = listOf(navArgument("productSku") { type = NavType.StringType })
         ) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getLong("productId") ?: 0L
-            DetalleProductoScreen(navController, productId, productViewModel)
+            val productSku = backStackEntry.arguments?.getString("productSku") ?: ""
+            DetalleProductoScreen(navController, productSku, productViewModel)
         }
-        composable("cart") { CartScreen(navController, productViewModel) } 
+        composable("cart") { CartScreen(navController, productViewModel) }
+        composable("checkout") { CheckoutScreen(navController, productViewModel, userViewModel) }
+        composable("pedidos") { PedidosScreen(navController, productViewModel) }
+        composable("profile") { ProfileScreen(navController, userViewModel, productViewModel) }
     }
 }

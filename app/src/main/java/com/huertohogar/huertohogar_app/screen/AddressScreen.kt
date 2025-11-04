@@ -67,23 +67,29 @@ fun AddressScreen(navController: NavController) {
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
         ) {
-            items(addresses) {
-                AddressItem(address = it, isSelected = it.id == selectedAddressId, onSelect = { selectedAddressId = it.id })
-            }
-            item {
-                OutlinedButton(
-                    onClick = { /* TODO: Lógica para añadir nueva dirección */ },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0xFFDDDDDD))
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Añadir", tint = Color(0xFF23AA49))
-                    Text("Añadir nueva dirección", color = Color(0xFF23AA49), fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+            LazyColumn(
+                modifier = Modifier.padding(paddingValues),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(addresses) {
+                    AddressItem(address = it, isSelected = it.id == selectedAddressId, onSelect = { selectedAddressId = it.id })
+                }
+                item {
+                    OutlinedButton(
+                        onClick = { /* TODO: Lógica para añadir nueva dirección */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0xFFDDDDDD))
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Añadir", tint = Color(0xFF23AA49))
+                        Text("Añadir nueva dirección", color = Color(0xFF23AA49), fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 12.dp))
+                    }
                 }
             }
         }
@@ -114,4 +120,3 @@ fun AddressItem(address: Address, isSelected: Boolean, onSelect: () -> Unit) {
         Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
     }
 }
-

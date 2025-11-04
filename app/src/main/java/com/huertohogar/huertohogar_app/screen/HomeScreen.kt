@@ -8,88 +8,90 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.ShoppingBasket
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
+import com.huertohogar.huertohogar_app.viewmodel.UserViewModel
+import com.huertohogar.huertohogar_app.components.ScaffoldWithBottomNav
+import com.huertohogar.huertohogar_app.utils.formatPrecio
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.launch
-import java.util.Locale
-import androidx.compose.ui.text.font.FontFamily
-
-private const val SHOW_FONT_DEBUG = true
-
-@Composable
-fun FontDebugSample() {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Text("DM Sans (MaterialTheme): ejemplo", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Default font (fallback): ejemplo", fontFamily = FontFamily.Default, style = MaterialTheme.typography.titleLarge)
-    }
-}
+import java.text.Normalizer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
-    viewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val products by viewModel.products.collectAsState()
-    val bestSellers = products.filter { 
+    val userProfile by userViewModel.userProfile.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
+
+    // Función para normalizar texto eliminando tildes
+    fun String.removeAccents(): String {
+        val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
+        return normalized.replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+    }
+
+    // Filtrar productos según la búsqueda (con y sin tildes)
+    val filteredProducts = remember(products, searchQuery) {
+        if (searchQuery.isBlank()) {
+            products
+        } else {
+            val normalizedQuery = searchQuery.removeAccents().lowercase()
+            products.filter { product ->
+                product.name.removeAccents().lowercase().contains(normalizedQuery) ||
+                (product.category?.removeAccents()?.lowercase()?.contains(normalizedQuery) == true) ||
+                (product.description?.removeAccents()?.lowercase()?.contains(normalizedQuery) == true)
+            }
+        }
+    }
+
+    val bestSellers = products.filter {
         it.name == "Espinacas Frescas" || it.name == "Leche Entera"
     }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedCity by remember { mutableStateOf("Concepción") }
-
-    // estado para recibir la posición vertical (en px) del centro del banner
     var bannerCenterYPx by remember { mutableStateOf(0f) }
 
     LaunchedEffect(Unit) { viewModel.loadProducts() }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.White)) {
-        // Elipse decorativa responsiva: empieza en la parte superior y es bastante más ancha que la pantalla
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // factores ajustables: ancho relativo y alto relativo respecto a la pantalla
             val widthFactor = 2.2f
-            val verticalShiftFactor = 0.47f // ligero ajuste hacia abajo: bajada muy pequeña (antes 0.50)
-
+            val verticalShiftFactor = 0.47f
             val ellipseWidthPx = size.width * widthFactor
-            // si ya medimos el banner, usamos bannerCenterYPx para que el centro del óvalo coincida con la mitad del banner
             val ellipseHeightPx = if (bannerCenterYPx > 0f) {
-                // queremos que el centro del óvalo esté en bannerCenterYPx -> entonces altura = centerY * 2
                 bannerCenterYPx * 2f
             } else {
-                // fallback mientras no se mida: 60% de la altura
                 size.height * 0.6f
             }
-
-            // centrar horizontalmente: calcular left para que el óvalo quede centrado
             val left = (size.width - ellipseWidthPx) / 2f
-            // desplazar la elipse hacia arriba (valor negativo) para que la curva esté más alta
             val top = -ellipseHeightPx * verticalShiftFactor
 
             drawOval(
@@ -99,47 +101,75 @@ fun HomeScreen(
             )
         }
 
-        Scaffold(
-            containerColor = Color.Transparent,
-            bottomBar = { AppBottomNavigationBar(navController, viewModel) }
+        ScaffoldWithBottomNav(
+            navController = navController,
+            viewModel = viewModel,
+            currentRoute = "home"
         ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                HomeHeader(selectedCity = selectedCity, onLocationClick = { showBottomSheet = true })
-                if (SHOW_FONT_DEBUG) FontDebugSample()
-                SearchBar()
-                // pasar callback para medir el centro del banner
-                BannerOferta(onMeasuredCenterY = { centerY -> bannerCenterYPx = centerY })
-                CategoriesRow(navController)
-                Row(
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        "Mas Vendido 🔥",
-                        color = Color(0xFF05161B),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    HomeHeader(
+                        greeting = userViewModel.getGreeting(),
+                        greetingEmoji = userViewModel.getGreetingEmoji(),
+                        userName = userProfile.nombre,
+                        selectedCity = selectedCity,
+                        onLocationClick = { showBottomSheet = true }
                     )
-                    Text("Ver todo", color = Color(0xFF23AA49), style = MaterialTheme.typography.bodyMedium)
-                }
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(bestSellers) { product ->
-                        BestSellerCard(product, viewModel) {
-                            navController.navigate("detalle_producto/${product.id}")
+                    SearchBar(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { query ->
+                            searchQuery = query
+                            isSearching = query.isNotBlank()
+                        },
+                        onClearSearch = {
+                            searchQuery = ""
+                            isSearching = false
                         }
+                    )
+
+                    // Mostrar resultados de búsqueda o contenido normal
+                    if (isSearching) {
+                        SearchResults(
+                            filteredProducts = filteredProducts,
+                            searchQuery = searchQuery,
+                            navController = navController,
+                            viewModel = viewModel
+                        )
+                    } else {
+                        BannerOferta(onMeasuredCenterY = { centerY -> bannerCenterYPx = centerY })
+                        CategoriesRow(navController)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Mas Vendido 🔥",
+                                color = Color(0xFF05161B),
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text("Ver todo", color = Color(0xFF23AA49), style = MaterialTheme.typography.bodyMedium)
+                        }
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(bestSellers) { product ->
+                                BestSellerCard(product, viewModel) {
+                                    navController.navigate("detalle_producto/${product.sku}")
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
             if (showBottomSheet) {
@@ -149,8 +179,12 @@ fun HomeScreen(
                     onDismiss = { showBottomSheet = false },
                     onCitySelected = { city ->
                         selectedCity = city
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) { showBottomSheet = false }
+                        scope.launch {
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
                         }
                     }
                 )
@@ -160,48 +194,85 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeHeader(selectedCity: String, onLocationClick: () -> Unit) {
+fun HomeHeader(
+    greeting: String,
+    greetingEmoji: String,
+    userName: String,
+    selectedCity: String,
+    onLocationClick: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    // Dimensiones responsivas basadas en ancho de pantalla
+    val avatarSize = (screenWidth * 0.11f).coerceIn(40.dp, 52.dp)
+    val iconSize = (avatarSize * 0.64f)
+    val horizontalPadding = (screenWidth * 0.06f).coerceIn(16.dp, 28.dp)
+    val verticalPadding = (screenWidth * 0.06f).coerceIn(20.dp, 32.dp)
+
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(top = 24.dp, start = 24.dp, end = 16.dp, bottom = 8.dp)
+            .padding(top = verticalPadding, start = horizontalPadding, end = horizontalPadding * 0.7f, bottom = 8.dp)
             .fillMaxWidth()
     ) {
-        AsyncImage(
-            model = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/gs64j45e_expires_30_days.png",
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.padding(end = 11.dp).size(44.dp).clip(CircleShape)
-        )
+        Box(
+            modifier = Modifier
+                .size(avatarSize)
+                .clip(CircleShape)
+                .background(Color(0xFF23AA49)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Perfil",
+                tint = Color.White,
+                modifier = Modifier.size(iconSize)
+            )
+        }
+        Spacer(modifier = Modifier.width(horizontalPadding * 0.46f))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Buen día", color = Color(0xFF969899), style = MaterialTheme.typography.bodySmall)
-            Text("Valentina López", color = Color(0xFF05161B), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    greeting,
+                    color = Color(0xFF969899),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    greetingEmoji,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Text(
+                userName,
+                color = Color(0xFF05161B),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1
+            )
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
-                .background(Color.White, RoundedCornerShape(50))
                 .clickable { onLocationClick() }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = (screenWidth * 0.03f).coerceIn(10.dp, 14.dp),
+                         vertical = (screenWidth * 0.02f).coerceIn(6.dp, 10.dp))
         ) {
-            // Contenedor pequeño para el icono de ubicación: asegura que se vea completo
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size((screenWidth * 0.07f).coerceIn(24.dp, 32.dp))
                     .clip(CircleShape)
-                    .background(Color(0xFFEFF6F3)), // sutil fondo para contrastar
+                    .background(Color(0xFFEFF6F3)),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/dv8s1034_expires_30_days.png",
-                    contentDescription = "Icono ubicación",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .size(18.dp) // tamaño algo menor que el contenedor para que no se corte
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Ubicación",
+                    tint = Color(0xFF23AA49),
+                    modifier = Modifier.size((screenWidth * 0.045f).coerceIn(16.dp, 20.dp))
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width((screenWidth * 0.02f).coerceIn(6.dp, 10.dp)))
             Text(selectedCity, color = Color(0xFF05161B), style = MaterialTheme.typography.bodySmall)
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Cambiar ciudad", tint = Color(0xFF05161B))
         }
@@ -245,88 +316,320 @@ fun LocationPickerBottomSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+fun SearchBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onClearSearch: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val horizontalPadding = (screenWidth * 0.06f).coerceIn(16.dp, 28.dp)
+
+    OutlinedTextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        placeholder = {
+            Text(
+                "Buscar productos...",
+                color = Color(0xFF969899),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = "Buscar",
+                tint = Color(0xFF23AA49)
+            )
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = onClearSearch) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Limpiar búsqueda",
+                        tint = Color(0xFF969899)
+                    )
+                }
+            }
+        },
         modifier = Modifier
-            .padding(bottom = 20.dp, start = 24.dp, end = 24.dp)
-            .clip(RoundedCornerShape(50))
-            .background(Color.White)
             .fillMaxWidth()
-            .padding(vertical = 16.dp, horizontal = 24.dp)
+            .padding(horizontal = horizontalPadding, vertical = 12.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            focusedBorderColor = Color(0xFF23AA49),
+            unfocusedBorderColor = Color.Transparent
+        ),
+        shape = RoundedCornerShape(50.dp),
+        singleLine = true
+    )
+}
+
+@Composable
+fun SearchResults(
+    filteredProducts: List<com.huertohogar.huertohogar_app.model.Product>,
+    searchQuery: String,
+    navController: NavController,
+    viewModel: ProductViewModel
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
     ) {
-        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color(0xFF23AA49))
-        Spacer(modifier = Modifier.width(8.dp))
         Text(
-            "Categoría de búsqueda",
-            color = Color(0xFF969899),
-            style = MaterialTheme.typography.bodyMedium
+            "Resultados para \"$searchQuery\"",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color(0xFF05161B),
+            modifier = Modifier.padding(vertical = 16.dp)
         )
+
+        if (filteredProducts.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Sin resultados",
+                    tint = Color(0xFF969899),
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "No se encontraron productos",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF969899)
+                )
+                Text(
+                    "Intenta con otros términos de búsqueda",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF969899)
+                )
+            }
+        } else {
+            Text(
+                "${filteredProducts.size} producto${if (filteredProducts.size != 1) "s" else ""} encontrado${if (filteredProducts.size != 1) "s" else ""}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF969899),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            filteredProducts.forEach { product ->
+                ProductSearchItem(
+                    product = product,
+                    onClick = { navController.navigate("detalle_producto/${product.sku}") },
+                    onAddToCart = { viewModel.addToCart(product) }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductSearchItem(
+    product: com.huertohogar.huertohogar_app.model.Product,
+    onClick: () -> Unit,
+    onAddToCart: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF3F5F7)),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(product.imageUrl ?: "")
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = product.name,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    product.name,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF1B1C1E),
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    product.category ?: "Sin categoría",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF969899)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        product.stock_unit ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF6B6E70)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "$${product.price.formatPrecio()}",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFFFF314A)
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xFF23AA49), CircleShape)
+                    .clickable { onAddToCart() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Agregar",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun BannerOferta(onMeasuredCenterY: (Float) -> Unit = {}) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    // Altura responsiva del banner (40-45% del ancho de pantalla)
+    val bannerHeight = (screenWidth * 0.42f).coerceIn(140.dp, 180.dp)
+    val horizontalPadding = (screenWidth * 0.06f).coerceIn(16.dp, 28.dp)
+    val bannerPadding = (screenWidth * 0.06f).coerceIn(20.dp, 28.dp)
+    val iconSize = (bannerHeight * 0.5f).coerceIn(60.dp, 90.dp)
+
     Box(
         modifier = Modifier
-            .padding(bottom = 8.dp, start = 24.dp, end = 24.dp)
+            .padding(bottom = 8.dp, start = horizontalPadding, end = horizontalPadding)
             .fillMaxWidth()
-            .height(160.dp)
+            .height(bannerHeight)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFE5F8EC))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color(0xFF23AA49), Color(0xFF2ECC71))
+                )
+            )
             .onGloballyPositioned { coords: LayoutCoordinates ->
-                // posición y en píxeles dentro del root
                 val position = coords.positionInRoot()
                 val centerY = position.y + coords.size.height / 2f
                 onMeasuredCenterY(centerY)
             }
     ) {
-        AsyncImage(
-            model = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/bpwraoyn_expires_30_days.png",
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.matchParentSize()
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bannerPadding),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "¡Ofertas Especiales!",
+                    color = Color.White,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Hasta 30% de descuento",
+                    color = Color.White.copy(alpha = 0.9f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.LocalOffer,
+                contentDescription = "Ofertas",
+                tint = Color.White.copy(alpha = 0.3f),
+                modifier = Modifier.size(iconSize)
+            )
+        }
     }
 }
 
 @Composable
 fun CategoriesRow(navController: NavController) {
-    Column(modifier = Modifier.padding(start = 24.dp, bottom = 6.dp, end = 24.dp)) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val horizontalPadding = (screenWidth * 0.06f).coerceIn(16.dp, 28.dp)
+    val categorySize = (screenWidth * 0.18f).coerceIn(65.dp, 80.dp)
+    val iconSize = (categorySize * 0.49f).coerceIn(30.dp, 40.dp)
+    val spacing = (screenWidth * 0.04f).coerceIn(12.dp, 18.dp)
+
+    Column(modifier = Modifier.padding(start = horizontalPadding, bottom = 6.dp, end = horizontalPadding)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text("Categorías", color = Color(0xFF05161B), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             Spacer(Modifier.weight(1f))
             Text("Ver todo", color = Color(0xFF23AA49), style = MaterialTheme.typography.bodyMedium)
         }
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(spacing)
         ) {
             val categories = listOf(
-                "Frutas" to "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/l1py66oy_expires_30_days.png",
-                "Verduras" to "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/zm6wb1sf_expires_30_days.png",
-                "Orgánicos" to "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/kvisq9dj_expires_30_days.png",
-                "Lácteos" to "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/r3kz6ssi_expires_30_days.png"
+                "Frutas" to Icons.Default.Spa,
+                "Verduras" to Icons.Default.Yard,
+                "Orgánicos" to Icons.Default.Eco,
+                "Lácteos" to Icons.Default.LocalCafe
             )
-            items(categories) { (title, img) ->
+            items(categories.size) { index ->
+                val (title, icon) = categories[index]
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { navController.navigate("categoria/$title") }
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(73.dp)
+                            .size(categorySize)
                             .clip(CircleShape)
                             .background(Color(0xFFF3F5F7)),
                         contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = img,
-                            contentDescription = null,
-                            modifier = Modifier.size(45.dp)
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = title,
+                            tint = Color(0xFF23AA49),
+                            modifier = Modifier.size(iconSize)
                         )
                     }
                     Text(title, color = Color(0xFF05161B), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
@@ -338,8 +641,15 @@ fun CategoriesRow(navController: NavController) {
 
 @Composable
 fun BestSellerCard(product: com.huertohogar.huertohogar_app.model.Product, viewModel: ProductViewModel, onClick: () -> Unit) {
-    // Tarjeta más fiel al prototipo: ajustar tamaños y orden visual
-    Box(modifier = Modifier.width(180.dp)) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    // Ancho de tarjeta responsivo (43-47% del ancho de pantalla)
+    val cardWidth = (screenWidth * 0.45f).coerceIn(160.dp, 200.dp)
+    val imageHeight = (cardWidth * 0.78f).coerceIn(120.dp, 160.dp)
+    val addButtonSize = (cardWidth * 0.29f).coerceIn(48.dp, 56.dp)
+
+    Box(modifier = Modifier.width(cardWidth)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -351,37 +661,36 @@ fun BestSellerCard(product: com.huertohogar.huertohogar_app.model.Product, viewM
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp) // imagen más alta para parecerse al prototipo
+                    .height(imageHeight)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFFF3F5F7)),
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = product.imageUrl ?: "",
-                    contentDescription = null,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(product.imageUrl ?: "")
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = product.name,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
-                        .size(100.dp) // tamaño controlado dentro del contenedor para mantener proporción
+                        .fillMaxSize()
+                        .padding(8.dp)
                 )
             }
-
             Spacer(Modifier.height(12.dp))
-
             Text(
                 product.name,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color(0xFF1B1C1E),
                 maxLines = 1
             )
-
-            Spacer(Modifier.height(8.dp))
-
+            Spacer(Modifier.height(4.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // unidad en gris y precio en rojo/bold (precio más grande)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = product.stock_unit ?: "",
@@ -395,89 +704,24 @@ fun BestSellerCard(product: com.huertohogar.huertohogar_app.model.Product, viewM
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 }
-
-                // espacio reservado para el botón; el botón real está superpuesto fuera del flujo
-                Spacer(modifier = Modifier.width(48.dp))
+                Spacer(modifier = Modifier.width((addButtonSize * 0.92f)))
             }
         }
-
-        // Botón verde circular superpuesto en la esquina inferior derecha (más grande y sobresaliente)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = (-12).dp, y = 12.dp) // sobresale más como en el prototipo
+                .offset(x = (-12).dp, y = 12.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(52.dp)
+                    .size(addButtonSize)
                     .background(Color(0xFF23AA49), CircleShape)
                     .clickable { viewModel.addToCart(product) },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar", tint = Color.White, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Add, contentDescription = "Agregar", tint = Color.White,
+                     modifier = Modifier.size(addButtonSize * 0.46f))
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppBottomNavigationBar(navController: NavController, viewModel: ProductViewModel) { 
-    var selectedItem by remember { mutableStateOf(0) }
-    val totalCartItems by viewModel.totalCartItems.collectAsState()
-    val items = listOf("Home", "Categorias", "", "Pedidos", "Perfil")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.GridView, Icons.Filled.ShoppingCart, Icons.Filled.CalendarToday, Icons.Filled.Person)
-
-    Box(modifier = Modifier.height(IntrinsicSize.Min)) {
-        NavigationBar(
-            containerColor = Color.White,
-            tonalElevation = 4.dp, // Añadir elevación para la sombra
-            modifier = Modifier.align(Alignment.BottomCenter).height(80.dp)
-        ) {
-            items.forEachIndexed { index, screen ->
-                 NavigationBarItem(
-                    icon = { Icon(icons[index], contentDescription = screen, modifier = Modifier.size(28.dp)) },
-                    selected = selectedItem == index,
-                    onClick = { selectedItem = index },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color(0xFF05161B),
-                        unselectedIconColor = Color(0xFFE0E0E0),
-                        indicatorColor = Color.White
-                    )
-                )
-            }
-        }
-
-        Box(modifier = Modifier.align(Alignment.TopCenter)) {
-            FloatingActionButton(
-                onClick = { navController.navigate("cart") }, 
-                containerColor = Color(0xFF23AA49),
-                shape = CircleShape,
-                modifier = Modifier.size(64.dp)
-            ) {
-                Icon(Icons.Filled.ShoppingBasket, "Carrito", tint = Color.White, modifier = Modifier.size(32.dp))
-            }
-            if (totalCartItems > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = 4.dp, end = 4.dp)
-                        .size(20.dp)
-                        .background(Color(0xFFFF314A), CircleShape)
-                        .border(2.dp, Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(totalCartItems.toString(), color = Color.White, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-                }
-            }
-        }
-    }
-}
-
-private fun Double.formatPrecio(): String {
-    return if (this % 1.0 == 0.0) {
-        this.toInt().toString().reversed().chunked(3).joinToString(".").reversed()
-    } else {
-        String.format(Locale.getDefault(), "%,.2f", this)
     }
 }

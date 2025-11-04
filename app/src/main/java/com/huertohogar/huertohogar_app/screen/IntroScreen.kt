@@ -13,81 +13,83 @@ import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.Alignment
-import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.navigation.NavController
+import androidx.compose.ui.res.painterResource
+import com.huertohogar.huertohogar_app.R
 
 @Composable
 fun IntroScreen(navController: NavController) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFF0FFF5), Color.White),
-                    endY = 600f
-                )
-            )
+            .windowInsetsPadding(WindowInsets.systemBars)
     ) {
-        // Contenido principal centrado
+        // IMAGEN DE FONDO COMPLETA desde Figma
+        Image(
+            painter = painterResource(id = R.drawable.intro_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+
+        // Solo texto y botón encima del fondo
         Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo
-            AsyncImage(
-                model = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/hmjt48pj_expires_30_days.png",
-                contentDescription = "Logo Huerto Hogar",
-                modifier = Modifier.size(80.dp)
-            )
-            Spacer(modifier = Modifier.height(32.dp))
+            // Espaciador para empujar el contenido hacia abajo
+            Spacer(modifier = Modifier.height(120.dp))
 
-            // Titulo
+            // Título principal
             Text(
                 text = "Reciba sus compras en su domicilio",
-                color = Color(0xFF05161B),
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Center
+                color = Color(0xFF1B5E20),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                lineHeight = 38.sp
             )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Subtítulo
             Text(
                 text = "La mejor aplicación de entrega de la ciudad para entregar tus alimentos frescos diarios",
-                color = Color(0xFF969899),
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
-                textAlign = TextAlign.Center
+                color = Color(0xFF9E9E9E),
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 24.sp
             )
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botón
+            // Botón "Compra ahora"
             Button(
                 onClick = { navController.navigate("login") },
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF23AA49)),
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .height(56.dp),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 10.dp
+                )
             ) {
                 Text(
                     text = "Compra ahora",
                     color = Color.White,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(vertical = 12.dp)
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
-        }
 
-        // Imagen inferior
-        AsyncImage(
-            model = "https://storage.googleapis.com/tagjs-prod.appspot.com/v1/2vg760JCpJ/qoa3xzm7_expires_30_days.png",
-            contentDescription = "Alimentos frescos",
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Espaciador para dejar espacio para la imagen inferior
+            Spacer(modifier = Modifier.height(280.dp))
+        }
     }
 }
