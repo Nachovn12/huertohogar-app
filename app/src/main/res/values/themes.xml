@@ -2,5 +2,12 @@
 <resources>
     <!-- Base application theme -->
     <style name="Theme.HuertoHogar_App" parent="android:Theme.Material.Light.NoActionBar" />
+    
+    <!-- Splash Screen Theme -->
+    <style name="Theme.HuertoHogar_App.Splash" parent="Theme.HuertoHogar_App">
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+    </style>
 </resources>
 

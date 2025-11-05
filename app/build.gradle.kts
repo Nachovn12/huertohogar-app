@@ -40,21 +40,34 @@ android {
 }
 
 dependencies {
+    // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
+    
+    // Compose
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.2")
+    implementation("androidx.compose.foundation:foundation:1.6.2")
+    
+    // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.0")
+    
+    // Lifecycle y ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    
+    // Image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("io.coil-kt:coil-svg:2.6.0")
-    implementation("com.google.code.gson:gson:2.10.1") // Gson para parsear JSON local en assets
-    implementation("androidx.compose.foundation:foundation:1.6.2")
+    
+    // JSON parsing
+    implementation("com.google.code.gson:gson:2.10.1")
 
+    // Debug tools
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

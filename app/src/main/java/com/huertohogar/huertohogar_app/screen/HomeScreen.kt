@@ -9,16 +9,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
+import com.huertohogar.huertohogar_app.R
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
 import com.huertohogar.huertohogar_app.viewmodel.UserViewModel
 import com.huertohogar.huertohogar_app.components.ScaffoldWithBottomNav
@@ -29,6 +31,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
@@ -45,6 +48,10 @@ fun HomeScreen(
     val userProfile by userViewModel.userProfile.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
+
+    // Estado del Drawer
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     // Función para normalizar texto eliminando tildes
     fun String.removeAccents(): String {
@@ -70,56 +77,72 @@ fun HomeScreen(
         it.name == "Espinacas Frescas" || it.name == "Leche Entera"
     }
     val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedCity by remember { mutableStateOf("Concepción") }
     var bannerCenterYPx by remember { mutableStateOf(0f) }
 
     LaunchedEffect(Unit) { viewModel.loadProducts() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val widthFactor = 2.2f
-            val verticalShiftFactor = 0.47f
-            val ellipseWidthPx = size.width * widthFactor
-            val ellipseHeightPx = if (bannerCenterYPx > 0f) {
-                bannerCenterYPx * 2f
-            } else {
-                size.height * 0.6f
-            }
-            val left = (size.width - ellipseWidthPx) / 2f
-            val top = -ellipseHeightPx * verticalShiftFactor
-
-            drawOval(
-                color = Color(0xFFF3F5F7),
-                topLeft = androidx.compose.ui.geometry.Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(ellipseWidthPx, ellipseHeightPx)
+    // ModalNavigationDrawer envuelve todo el contenido
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            HuertoHogarDrawerContent(
+                navController = navController,
+                userProfile = userProfile,
+                onCloseDrawer = {
+                    scope.launch { drawerState.close() }
+                }
             )
-        }
+        },
+        gesturesEnabled = true
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val widthFactor = 2.2f
+                val verticalShiftFactor = 0.47f
+                val ellipseWidthPx = size.width * widthFactor
+                val ellipseHeightPx = if (bannerCenterYPx > 0f) {
+                    bannerCenterYPx * 2f
+                } else {
+                    size.height * 0.6f
+                }
+                val left = (size.width - ellipseWidthPx) / 2f
+                val top = -ellipseHeightPx * verticalShiftFactor
 
-        ScaffoldWithBottomNav(
-            navController = navController,
-            viewModel = viewModel,
-            currentRoute = "home"
-        ) { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    HomeHeader(
-                        greeting = userViewModel.getGreeting(),
-                        greetingEmoji = userViewModel.getGreetingEmoji(),
-                        userName = userProfile.nombre,
-                        selectedCity = selectedCity,
-                        onLocationClick = { showBottomSheet = true }
-                    )
+                drawOval(
+                    color = Color(0xFFF3F5F7),
+                    topLeft = androidx.compose.ui.geometry.Offset(left, top),
+                    size = androidx.compose.ui.geometry.Size(ellipseWidthPx, ellipseHeightPx)
+                )
+            }
+
+            ScaffoldWithBottomNav(
+                navController = navController,
+                viewModel = viewModel,
+                currentRoute = "home"
+            ) { paddingValues ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        HomeHeader(
+                            greeting = userViewModel.getGreeting(),
+                            greetingEmoji = userViewModel.getGreetingEmoji(),
+                            userName = userProfile.nombre,
+                            selectedCity = selectedCity,
+                            onLocationClick = { showBottomSheet = true },
+                            onMenuClick = {
+                                scope.launch { drawerState.open() }
+                            }
+                        )
                     SearchBar(
                         searchQuery = searchQuery,
                         onSearchQueryChange = { query ->
@@ -191,6 +214,7 @@ fun HomeScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -199,7 +223,8 @@ fun HomeHeader(
     greetingEmoji: String,
     userName: String,
     selectedCity: String,
-    onLocationClick: () -> Unit
+    onLocationClick: () -> Unit,
+    onMenuClick: () -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -213,23 +238,24 @@ fun HomeHeader(
     Row(
         modifier = Modifier
             .padding(top = verticalPadding, start = horizontalPadding, end = horizontalPadding * 0.7f, bottom = 8.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(avatarSize)
-                .clip(CircleShape)
-                .background(Color(0xFF23AA49)),
-            contentAlignment = Alignment.Center
+        // Botón del menú hamburguesa
+        IconButton(
+            onClick = onMenuClick,
+            modifier = Modifier.size(avatarSize)
         ) {
             Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Perfil",
-                tint = Color.White,
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menú",
+                tint = Color(0xFF23AA49),
                 modifier = Modifier.size(iconSize)
             )
         }
-        Spacer(modifier = Modifier.width(horizontalPadding * 0.46f))
+        
+        Spacer(modifier = Modifier.width(horizontalPadding * 0.3f))
+        
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -254,6 +280,12 @@ fun HomeHeader(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
+                .background(Color(0xFFF8F9FA))
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFFE0E0E0),
+                    shape = RoundedCornerShape(50)
+                )
                 .clickable { onLocationClick() }
                 .padding(horizontal = (screenWidth * 0.03f).coerceIn(10.dp, 14.dp),
                          vertical = (screenWidth * 0.02f).coerceIn(6.dp, 10.dp))
@@ -273,8 +305,8 @@ fun HomeHeader(
                 )
             }
             Spacer(modifier = Modifier.width((screenWidth * 0.02f).coerceIn(6.dp, 10.dp)))
-            Text(selectedCity, color = Color(0xFF05161B), style = MaterialTheme.typography.bodySmall)
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Cambiar ciudad", tint = Color(0xFF05161B))
+            Text(selectedCity, color = Color(0xFF05161B), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "Cambiar ciudad", tint = Color(0xFF23AA49))
         }
     }
 }
@@ -607,13 +639,13 @@ fun CategoriesRow(navController: NavController) {
             horizontalArrangement = Arrangement.spacedBy(spacing)
         ) {
             val categories = listOf(
-                "Frutas" to Icons.Default.Spa,
-                "Verduras" to Icons.Default.Yard,
-                "Orgánicos" to Icons.Default.Eco,
-                "Lácteos" to Icons.Default.LocalCafe
+                "Frutas" to R.drawable.ic_categoria_frutas,
+                "Verduras" to R.drawable.ic_categoria_verduras,
+                "Orgánicos" to R.drawable.ic_categoria_organicos,
+                "Lácteos" to R.drawable.ic_categoria_lacteos
             )
             items(categories.size) { index ->
-                val (title, icon) = categories[index]
+                val (title, iconRes) = categories[index]
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable { navController.navigate("categoria/$title") }
@@ -625,11 +657,11 @@ fun CategoriesRow(navController: NavController) {
                             .background(Color(0xFFF3F5F7)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = icon,
+                        Image(
+                            painter = painterResource(id = iconRes),
                             contentDescription = title,
-                            tint = Color(0xFF23AA49),
-                            modifier = Modifier.size(iconSize)
+                            modifier = Modifier.size(iconSize),
+                            colorFilter = ColorFilter.tint(Color(0xFF23AA49))
                         )
                     }
                     Text(title, color = Color(0xFF05161B), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
@@ -725,3 +757,300 @@ fun BestSellerCard(product: com.huertohogar.huertohogar_app.model.Product, viewM
         }
     }
 }
+
+// Componente del Drawer con diseño HuertoHogar
+@Composable
+fun HuertoHogarDrawerContent(
+    navController: NavController,
+    userProfile: com.huertohogar.huertohogar_app.viewmodel.UserProfileData,
+    onCloseDrawer: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+    
+    // Ancho del drawer responsivo: 80% en móviles pequeños, máximo 380dp en tablets
+    val drawerWidth = (screenWidth * 0.8f).coerceIn(280.dp, 380.dp)
+    val headerHeight = (screenHeight * 0.22f).coerceIn(160.dp, 200.dp)
+    val avatarSize = (drawerWidth * 0.20f).coerceIn(56.dp, 72.dp)
+    val headerPadding = (drawerWidth * 0.06f).coerceIn(16.dp, 24.dp)
+    
+    ModalDrawerSheet(
+        drawerContainerColor = Color.White,
+        modifier = Modifier.width(drawerWidth)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Header del Drawer con gradiente verde
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF23AA49),
+                                Color(0xFF2EC561)
+                            )
+                        )
+                    )
+                    .padding(headerPadding)
+            ) {
+                Column(
+                    modifier = Modifier.align(Alignment.BottomStart)
+                ) {
+                    // Avatar del usuario
+                    Box(
+                        modifier = Modifier
+                            .size(avatarSize)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.3f))
+                            .border(3.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Usuario",
+                            tint = Color.White,
+                            modifier = Modifier.size(avatarSize * 0.56f)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height((headerHeight * 0.06f).coerceIn(8.dp, 12.dp)))
+                    
+                    // Nombre del usuario
+                    Text(
+                        text = userProfile.nombre,
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = (drawerWidth.value * 0.055f).coerceIn(16f, 20f).sp
+                        ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = userProfile.email,
+                        color = Color.White.copy(alpha = 0.9f),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = (drawerWidth.value * 0.038f).coerceIn(12f, 14f).sp
+                        ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Opciones del menú
+            DrawerMenuItem(
+                icon = Icons.Outlined.Home,
+                title = "Inicio",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Category,
+                title = "Categorías",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("categoria/Todos")
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.ShoppingCart,
+                title = "Carrito de Compras",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("cart")
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Receipt,
+                title = "Mis Pedidos",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("pedidos")
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Person,
+                title = "Mi Perfil",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("profile")
+                }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp, horizontal = (drawerWidth * 0.053f).coerceIn(12.dp, 20.dp)),
+                color = Color(0xFFE0E0E0)
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Favorite,
+                title = "Favoritos",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Navegar a favoritos cuando esté implementado
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.LocalShipping,
+                title = "Seguimiento de Envíos",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Navegar a seguimiento cuando esté implementado
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Notifications,
+                title = "Notificaciones",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Navegar a notificaciones cuando esté implementado
+                }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp, horizontal = (drawerWidth * 0.053f).coerceIn(12.dp, 20.dp)),
+                color = Color(0xFFE0E0E0)
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Settings,
+                title = "Configuración",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Navegar a configuración cuando esté implementado
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Help,
+                title = "Ayuda y Soporte",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Navegar a ayuda cuando esté implementado
+                }
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Info,
+                title = "Acerca de",
+                drawerWidth = drawerWidth,
+                onClick = {
+                    onCloseDrawer()
+                    // Mostrar información de la app
+                }
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Botón de cerrar sesión
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp, horizontal = (drawerWidth * 0.053f).coerceIn(12.dp, 20.dp)),
+                color = Color(0xFFE0E0E0)
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Outlined.Logout,
+                title = "Cerrar Sesión",
+                drawerWidth = drawerWidth,
+                iconTint = Color(0xFFFF314A),
+                textColor = Color(0xFFFF314A),
+                onClick = {
+                    onCloseDrawer()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height((drawerWidth * 0.04f).coerceIn(12.dp, 16.dp)))
+
+            // Footer con versión
+            Text(
+                text = "HuertoHogar v1.0",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = (drawerWidth.value * 0.035f).coerceIn(10f, 12f).sp
+                ),
+                color = Color(0xFF969899),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = (drawerWidth * 0.04f).coerceIn(12.dp, 16.dp)),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+    }
+}
+
+// Item individual del menú del Drawer
+@Composable
+fun DrawerMenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    drawerWidth: Dp,
+    iconTint: Color = Color(0xFF23AA49),
+    textColor: Color = Color(0xFF05161B),
+    onClick: () -> Unit
+) {
+    // Tamaños responsivos basados en el ancho del drawer
+    val horizontalPadding = (drawerWidth * 0.066f).coerceIn(16.dp, 24.dp)
+    val verticalPadding = (drawerWidth * 0.046f).coerceIn(12.dp, 16.dp)
+    val iconSize = (drawerWidth * 0.08f).coerceIn(22.dp, 26.dp)
+    val spacerWidth = (drawerWidth * 0.053f).coerceIn(14.dp, 20.dp)
+    val textSize = (drawerWidth.value * 0.047f).coerceIn(13f, 16f).sp
+    
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = title,
+            tint = iconTint,
+            modifier = Modifier.size(iconSize)
+        )
+        
+        Spacer(modifier = Modifier.width(spacerWidth))
+        
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = textSize),
+            color = textColor,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+

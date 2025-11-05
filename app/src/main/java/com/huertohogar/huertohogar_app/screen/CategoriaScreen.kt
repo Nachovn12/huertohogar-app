@@ -30,6 +30,7 @@ import coil.compose.AsyncImage
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
 import com.huertohogar.huertohogar_app.components.ScaffoldWithBottomNav
 import com.huertohogar.huertohogar_app.utils.formatPrecio
+import com.huertohogar.huertohogar_app.utils.getResponsiveDimensions
 import java.text.Normalizer
 
 
@@ -46,6 +47,7 @@ fun CategoriaScreen(
     viewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val productos by viewModel.products.collectAsState()
+    val dimens = getResponsiveDimensions()
 
     // Si la categoría es "Todos", mostrar todos los productos ordenados alfabéticamente
     // Si no, filtrar por categoría específica
@@ -56,10 +58,6 @@ fun CategoriaScreen(
             it.category?.unaccent()?.equals(categoria.unaccent(), ignoreCase = true) == true
         }.distinctBy { it.sku }.sortedBy { it.name }
     }
-
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val horizontalPadding = (screenWidth * 0.04f).coerceIn(12.dp, 20.dp)
 
     ScaffoldWithBottomNav(
         navController = navController,
@@ -76,22 +74,26 @@ fun CategoriaScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                Spacer(modifier = Modifier.height((screenWidth * 0.06f).coerceIn(20.dp, 28.dp)))
+                Spacer(modifier = Modifier.height(dimens.spacingLarge))
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = horizontalPadding, vertical = 4.dp)
+                        .padding(horizontal = dimens.paddingMedium, vertical = dimens.spacingTiny)
                         .fillMaxWidth()
                 ) {
                     IconButton(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver atrás")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver atrás",
+                            modifier = Modifier.size(dimens.iconMedium)
+                        )
                     }
                     Text(
                         text = if (categoria.equals("Todos", ignoreCase = true)) "Todos los Productos" else categoria,
                         color = Color(0xFF05161B),
-                        fontSize = (screenWidth.value * 0.055f).coerceIn(20f, 24f).sp,
+                        fontSize = dimens.textTitle,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -99,7 +101,11 @@ fun CategoriaScreen(
                         onClick = { /* Buscar o acción futura */ },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = "Buscar")
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Buscar",
+                            modifier = Modifier.size(dimens.iconMedium)
+                        )
                     }
                 }
 
@@ -107,11 +113,11 @@ fun CategoriaScreen(
                 Text(
                     text = "${productosFiltrados.size} productos",
                     color = Color(0xFF969899),
-                    fontSize = (screenWidth.value * 0.032f).coerceIn(12f, 14f).sp,
-                    modifier = Modifier.padding(horizontal = horizontalPadding)
+                    fontSize = dimens.textSmall,
+                    modifier = Modifier.padding(horizontal = dimens.paddingMedium)
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(dimens.spacingTiny))
                 if (productosFiltrados.isEmpty()) {
                     Box(
                         Modifier
@@ -119,15 +125,19 @@ fun CategoriaScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No hay productos en esta categoría.", color = Color(0xFF969899))
+                        Text(
+                            "No hay productos en esta categoría.",
+                            color = Color(0xFF969899),
+                            fontSize = dimens.textMedium
+                        )
                     }
                 } else {
                     // Grid responsivo - usa GridCells.Adaptive para ajustarse automáticamente
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = (screenWidth * 0.42f).coerceIn(150.dp, 180.dp)),
-                        contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy((screenWidth * 0.045f).coerceIn(14.dp, 20.dp)),
-                        horizontalArrangement = Arrangement.spacedBy((screenWidth * 0.028f).coerceIn(9.dp, 14.dp)),
+                        columns = GridCells.Adaptive(minSize = (dimens.screenWidth * 0.42f).coerceIn(150.dp, 180.dp)),
+                        contentPadding = PaddingValues(horizontal = dimens.paddingMedium, vertical = dimens.spacingMedium),
+                        verticalArrangement = Arrangement.spacedBy(dimens.spacingMedium),
+                        horizontalArrangement = Arrangement.spacedBy(dimens.spacingSmall),
                         modifier = Modifier.fillMaxHeight()
                     ) {
                         items(productosFiltrados) { producto ->
@@ -157,17 +167,14 @@ fun CategoriaProductoCardMinimal(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-
-    // Tamaños responsivos
-    val cardPadding = (screenWidth * 0.03f).coerceIn(10.dp, 14.dp)
-    val addButtonSize = (screenWidth * 0.08f).coerceIn(28.dp, 36.dp)
+    val dimens = getResponsiveDimensions()
+    val cardPadding = dimens.paddingSmall
+    val addButtonSize = (dimens.screenWidth * 0.08f).coerceIn(28.dp, 36.dp)
     val iconSize = (addButtonSize * 0.625f)
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(dimens.cornerRadiusMedium))
             .background(Color(0xFFF3F5F7))
             .clickable { onClick() }
             .padding(cardPadding)
@@ -181,17 +188,17 @@ fun CategoriaProductoCardMinimal(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(dimens.cornerRadiusMedium))
         )
-        Spacer(modifier = Modifier.height((screenWidth * 0.02f).coerceIn(6.dp, 10.dp)))
+        Spacer(modifier = Modifier.height(dimens.spacingTiny))
         Text(
             text = nombre,
             color = Color(0xFF1B1C1E),
             fontWeight = FontWeight.Bold,
-            fontSize = (screenWidth.value * 0.04f).coerceIn(14f, 17f).sp,
+            fontSize = dimens.textMedium,
             maxLines = 1
         )
-        Spacer(modifier = Modifier.height((screenWidth * 0.02f).coerceIn(6.dp, 10.dp)))
+        Spacer(modifier = Modifier.height(dimens.spacingTiny))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -201,7 +208,7 @@ fun CategoriaProductoCardMinimal(
                 text = "$unidadMedida, $${precio.formatPrecio()}",
                 color = Color(0xFFFF314A),
                 fontWeight = FontWeight.Bold,
-                fontSize = (screenWidth.value * 0.035f).coerceIn(12f, 15f).sp,
+                fontSize = dimens.textSmall,
             )
             IconButton(
                 onClick = onAdd,

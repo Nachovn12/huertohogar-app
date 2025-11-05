@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Instalar App en Emulador",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"cd /d \"${workspaceFolder}\" && .\\gradlew installDebug"
+			],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

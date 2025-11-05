@@ -1,80 +1,93 @@
 package com.huertohogar.huertohogar_app.screen
 
-import androidx.compose.runtime.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.ui.*
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.text.font.*
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.text.style.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.huertohogar.huertohogar_app.R
+import com.huertohogar.huertohogar_app.utils.getResponsiveDimensions
 
 @Composable
 fun IntroScreen(navController: NavController) {
+    val dimens = getResponsiveDimensions()
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
+        modifier = Modifier.fillMaxSize()
     ) {
-        // IMAGEN DE FONDO COMPLETA desde Figma
+        // Imagen de fondo que ocupa toda la pantalla sin bordes
         Image(
             painter = painterResource(id = R.drawable.intro_background),
-            contentDescription = null,
+            contentDescription = "Productos frescos de fondo",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds
+            contentScale = ContentScale.FillHeight,
+            alignment = Alignment.Center
         )
 
-        // Solo texto y botón encima del fondo
+        // Contenido superpuesto centrado
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .systemBarsPadding()
+                .padding(horizontal = dimens.paddingLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Espaciador para empujar el contenido hacia abajo
-            Spacer(modifier = Modifier.height(120.dp))
+            // Espaciador superior (30% del espacio disponible)
+            Spacer(modifier = Modifier.weight(0.35f))
 
             // Título principal
             Text(
-                text = "Reciba sus compras en su domicilio",
+                text = "Reciba sus compras\nen su domicilio",
                 color = Color(0xFF1B5E20),
-                fontSize = 32.sp,
+                fontSize = (dimens.screenWidth.value * 0.072f).coerceIn(24f, 32f).sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                lineHeight = 38.sp
+                lineHeight = (dimens.screenWidth.value * 0.085f).coerceIn(30f, 40f).sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = dimens.paddingSmall)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(dimens.spacingMedium))
 
             // Subtítulo
             Text(
-                text = "La mejor aplicación de entrega de la ciudad para entregar tus alimentos frescos diarios",
-                color = Color(0xFF9E9E9E),
-                fontSize = 16.sp,
+                text = "La mejor aplicación de entrega de la ciudad\npara entregar tus alimentos frescos diarios",
+                color = Color(0xFF757575),
+                fontSize = dimens.textMedium,
                 textAlign = TextAlign.Center,
-                lineHeight = 24.sp
+                lineHeight = (dimens.textMedium.value * 1.5f).sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = dimens.paddingSmall)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimens.spacingLarge * 1.5f))
 
             // Botón "Compra ahora"
             Button(
                 onClick = { navController.navigate("login") },
-                shape = RoundedCornerShape(50.dp),
+                shape = RoundedCornerShape(dimens.cornerRadiusLarge),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                    .fillMaxWidth(0.85f)
+                    .height(dimens.buttonHeight),
                 elevation = ButtonDefaults.buttonElevation(
                     defaultElevation = 6.dp,
                     pressedElevation = 10.dp
@@ -83,13 +96,13 @@ fun IntroScreen(navController: NavController) {
                 Text(
                     text = "Compra ahora",
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = dimens.textLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // Espaciador para dejar espacio para la imagen inferior
-            Spacer(modifier = Modifier.height(280.dp))
+            // Espaciador inferior (65% del espacio disponible)
+            Spacer(modifier = Modifier.weight(0.65f))
         }
     }
 }

@@ -55,7 +55,7 @@ fun AddressScreen(navController: NavController) {
         },
         bottomBar = {
             Button(
-                onClick = { /* TODO: Navegar a la pantalla de pago */ },
+                onClick = { navController.navigate("checkout") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -82,7 +82,7 @@ fun AddressScreen(navController: NavController) {
                 }
                 item {
                     OutlinedButton(
-                        onClick = { /* TODO: Lógica para añadir nueva dirección */ },
+                        onClick = { /* Funcionalidad para futuras versiones */ },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(1.dp, Color(0xFFDDDDDD))

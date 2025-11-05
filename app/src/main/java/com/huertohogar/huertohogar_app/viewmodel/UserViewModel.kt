@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Calendar
 
+// Data class para almacenar info del perfil del usuario
 data class UserProfileData(
     val nombre: String = "Juanito Pérez González",
     val email: String = "juanito.perez@email.com",
@@ -17,10 +18,15 @@ data class UserProfileData(
     val avatarUrl: String? = null
 )
 
+/**
+ * ViewModel que gestiona el perfil del usuario
+ * Implementé StateFlow para manejar cambios reactivos en el perfil
+ */
 class UserViewModel : ViewModel() {
     private val _userProfile = MutableStateFlow(UserProfileData())
     val userProfile: StateFlow<UserProfileData> = _userProfile.asStateFlow()
 
+    // Métodos para actualizar campos del perfil
     fun updateNombre(nombre: String) {
         _userProfile.value = _userProfile.value.copy(nombre = nombre)
     }
@@ -49,6 +55,7 @@ class UserViewModel : ViewModel() {
         _userProfile.value = _userProfile.value.copy(region = region)
     }
 
+    // Genera saludo según la hora del día
     fun getGreeting(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         return when (hour) {
@@ -59,6 +66,7 @@ class UserViewModel : ViewModel() {
         }
     }
 
+    // Emoji correspondiente al saludo
     fun getGreetingEmoji(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         return when (hour) {
@@ -69,8 +77,8 @@ class UserViewModel : ViewModel() {
         }
     }
 
+    // Extrae solo el primer nombre del usuario
     fun getPrimerNombre(): String {
         return _userProfile.value.nombre.split(" ").firstOrNull() ?: "Usuario"
     }
 }
-

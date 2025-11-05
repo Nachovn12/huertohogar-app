@@ -3,12 +3,14 @@ package com.huertohogar.huertohogar_app.screen
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -130,13 +132,33 @@ fun DetalleProductoScreen(
 
                         Column {
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                FeatureBox(textTop = product!!.season ?: "-", textBottom = "Temporada", emoji = "🌱", modifier = Modifier.weight(1f))
-                                FeatureBox(textTop = product!!.difficulty ?: "-", textBottom = "Dificultad", emoji = "💪", modifier = Modifier.weight(1f))
+                                FeatureBox(
+                                    icon = Icons.Outlined.LocalFlorist,
+                                    textTop = product!!.freshness ?: "Fresco", 
+                                    textBottom = "Frescura", 
+                                    modifier = Modifier.weight(1f)
+                                )
+                                FeatureBox(
+                                    icon = Icons.Outlined.Place,
+                                    textTop = product!!.origin ?: "Local", 
+                                    textBottom = "Origen", 
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                             Spacer(Modifier.height(16.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                FeatureBox(textTop = product!!.plantingDepth ?: "-", textBottom = "Profundidad", emoji = "🌿", modifier = Modifier.weight(1f))
-                                FeatureBox(textTop = product!!.harvestTime ?: "-", textBottom = "Cosecha", emoji = "⏱️", modifier = Modifier.weight(1f))
+                                FeatureBox(
+                                    icon = Icons.Outlined.AcUnit,
+                                    textTop = product!!.storage ?: "Refrigerar", 
+                                    textBottom = "Conservación", 
+                                    modifier = Modifier.weight(1f)
+                                )
+                                FeatureBox(
+                                    icon = Icons.Outlined.CheckCircle,
+                                    textTop = product!!.availability ?: "En Stock", 
+                                    textBottom = "Disponibilidad", 
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                     }
@@ -149,21 +171,46 @@ fun DetalleProductoScreen(
 
 @Composable
 fun FeatureBox(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     textTop: String,
     textBottom: String,
-    emoji: String,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
-            .background(Color.White, RoundedCornerShape(16.dp))
-            .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(16.dp))
-            .padding(vertical = 14.dp),
+            .background(Color.White, RoundedCornerShape(20.dp))
+            .border(1.5.dp, Color(0xFFE8F5E9), RoundedCornerShape(20.dp))
+            .padding(vertical = 20.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(emoji, fontSize = 22.sp, modifier = Modifier.padding(bottom = 2.dp))
-        Text(textTop, color = Color(0xFF23AA49), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Text(textBottom, color = Color(0xFF969899), fontSize = 13.sp)
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color(0xFFE8F5E9), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = textBottom,
+                tint = Color(0xFF23AA49),
+                modifier = Modifier.size(26.dp)
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            textTop, 
+            color = Color(0xFF05161B), 
+            fontSize = 15.sp, 
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            textBottom, 
+            color = Color(0xFF969899), 
+            fontSize = 13.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }

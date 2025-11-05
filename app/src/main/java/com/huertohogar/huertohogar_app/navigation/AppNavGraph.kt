@@ -1,56 +1,86 @@
 package com.huertohogar.huertohogar_app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.NavHostController
 import androidx.navigation.navArgument
-import com.huertohogar.huertohogar_app.screen.SplashScreen
-import com.huertohogar.huertohogar_app.screen.IntroScreen
-import com.huertohogar.huertohogar_app.screen.LoginScreen
-import com.huertohogar.huertohogar_app.screen.RegisterScreen
-import com.huertohogar.huertohogar_app.screen.HomeScreen
-import com.huertohogar.huertohogar_app.screen.CategoriaScreen 
-import com.huertohogar.huertohogar_app.screen.DetalleProductoScreen
-import com.huertohogar.huertohogar_app.screen.CartScreen
-import com.huertohogar.huertohogar_app.screen.CheckoutScreen
-import com.huertohogar.huertohogar_app.screen.ProfileScreen
-import com.huertohogar.huertohogar_app.screen.PedidosScreen
+import com.huertohogar.huertohogar_app.screen.*
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
 import com.huertohogar.huertohogar_app.viewmodel.UserViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * Configuración del grafo de navegación
+ * Aprendí a usar Navigation Compose para manejar las rutas de la app
+ */
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
     productViewModel: ProductViewModel
 ) {
+    // ViewModel compartido para datos del usuario
     val userViewModel: UserViewModel = viewModel()
 
     NavHost(navController, startDestination = "splash") {
-        composable("splash") { SplashScreen(navController) }
-        composable("intro") { IntroScreen(navController) }
-        composable("login") { LoginScreen(navController) }
-        composable("register") { RegisterScreen(navController) }
-        composable("home") { HomeScreen(navController, productViewModel, userViewModel) }
+        // Pantalla inicial
+        composable("splash") { 
+            SplashScreen(navController) 
+        }
+        
+        // Introducción
+        composable("intro") { 
+            IntroScreen(navController) 
+        }
+        
+        // Autenticación (unificada login/register)
+        composable("auth") { 
+            AuthScreen(navController, initialTab = 0) 
+        }
+        composable("login") { 
+            AuthScreen(navController, initialTab = 0) 
+        }
+        composable("register") { 
+            AuthScreen(navController, initialTab = 1) 
+        }
+        
+        // Pantalla principal
+        composable("home") { 
+            HomeScreen(navController, productViewModel, userViewModel) 
+        }
+        
+        // Navegación con parámetros
         composable(
-            "categoria/{categoria}",
+            route = "categoria/{categoria}",
             arguments = listOf(navArgument("categoria") { type = NavType.StringType })
         ) { backStackEntry ->
             val categoria = backStackEntry.arguments?.getString("categoria") ?: ""
             CategoriaScreen(navController, categoria, productViewModel)
         }
+        
         composable(
-            "detalle_producto/{productSku}",
+            route = "detalle_producto/{productSku}",
             arguments = listOf(navArgument("productSku") { type = NavType.StringType })
         ) { backStackEntry ->
             val productSku = backStackEntry.arguments?.getString("productSku") ?: ""
             DetalleProductoScreen(navController, productSku, productViewModel)
         }
-        composable("cart") { CartScreen(navController, productViewModel) }
-        composable("checkout") { CheckoutScreen(navController, productViewModel, userViewModel) }
-        composable("pedidos") { PedidosScreen(navController, productViewModel) }
-        composable("profile") { ProfileScreen(navController, userViewModel, productViewModel) }
+        
+        // Carrito y compra
+        composable("cart") { 
+            CartScreen(navController, productViewModel) 
+        }
+        composable("checkout") { 
+            CheckoutScreen(navController, productViewModel, userViewModel) 
+        }
+        
+        // Perfil y pedidos
+        composable("pedidos") { 
+            PedidosScreen(navController, productViewModel) 
+        }
+        composable("profile") { 
+            ProfileScreen(navController, userViewModel, productViewModel) 
+        }
     }
 }
