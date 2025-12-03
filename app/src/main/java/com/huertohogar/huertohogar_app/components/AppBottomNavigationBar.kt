@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.navigation.NavController
 import com.huertohogar.huertohogar_app.viewmodel.ProductViewModel
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.navigationBarsPadding
 
 data class NavItem(
     val label: String,
@@ -66,34 +67,37 @@ fun AppBottomNavigationBar(
     // Altura responsiva del NavigationBar
     val navBarHeight = (screenWidth * 0.17f).coerceIn(60.dp, 72.dp)
     val fabSize = (screenWidth * 0.14f).coerceIn(52.dp, 60.dp)
-    val fabOffset = -(navBarHeight * 0.12f)
+    // Ajustar el offset del FAB para que se superponga al pill (mitad del tamaño del FAB)
+    val fabOffset = -(fabSize / 2)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(navBarHeight)
+            .navigationBarsPadding() // respetar gestos del sistema
     ) {
-        // NavigationBar mejorada y responsiva
+        // NavigationBar con pill blanco con esquinas redondeadas
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
+                .height(navBarHeight - 6.dp)
                 .align(Alignment.BottomCenter),
             color = Color.White,
-            shadowElevation = 8.dp,
-            tonalElevation = 0.dp
+            shadowElevation = 10.dp,
+            tonalElevation = 0.dp,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = (screenWidth * 0.005f), vertical = (navBarHeight * 0.06f)),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, item ->
                     if (index == 2) {
                         // Espacio para el FAB - dinámico según tamaño de pantalla
-                        Spacer(modifier = Modifier.width(fabSize * 1.1f))
+                        Spacer(modifier = Modifier.width(fabSize * 1.05f))
                     } else {
                         NavBarItem(
                             item = item,
@@ -189,18 +193,21 @@ fun NavBarItem(
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (isSelected) Color(0xFFF3F5F7) else Color.Transparent
-            )
-            .padding(vertical = 2.dp),
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box {
+        // Contenedor circular para icon cuando está seleccionado
+        Box(
+            modifier = Modifier
+                .size((screenWidth * 0.095f).coerceIn(36.dp, 42.dp))
+                .clip(CircleShape)
+                .background(if (isSelected) Color(0xFFEAF6ED) else Color.Transparent),
+            contentAlignment = Alignment.Center
+        ) {
             IconButton(
                 onClick = onClick,
-                modifier = Modifier.size((screenWidth * 0.095f).coerceIn(36.dp, 42.dp))
+                modifier = Modifier.size((screenWidth * 0.095f).coerceIn(32.dp, 40.dp))
             ) {
                 Icon(
                     imageVector = if (isSelected) item.iconFilled else item.iconOutlined,
@@ -216,7 +223,7 @@ fun NavBarItem(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .offset(x = 4.dp, y = 4.dp)
+                        .offset(x = 6.dp, y = (-4).dp)
                         .size(badgeSize)
                         .shadow(2.dp, CircleShape)
                         .background(Color(0xFFFF314A), CircleShape)
@@ -233,15 +240,15 @@ fun NavBarItem(
             }
         }
 
-        if (isSelected) {
-            Text(
-                text = item.label,
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF23AA49),
-                maxLines = 1
-            )
-        }
+        Spacer(modifier = Modifier.height(2.dp))
+
+        Text(
+            text = item.label,
+            fontSize = fontSize.sp,
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+            color = if (isSelected) Color(0xFF23AA49) else Color(0xFF969899),
+            maxLines = 1
+        )
     }
 }
 
@@ -276,4 +283,3 @@ fun ScaffoldWithBottomNav(
         }
     }
 }
-

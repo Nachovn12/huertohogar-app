@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -62,6 +63,8 @@ fun AuthScreen(navController: NavController, initialTab: Int = 0) {
                 .fillMaxSize()
                 .systemBarsPadding()
                 .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = dimens.paddingLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -222,16 +225,22 @@ fun AuthScreen(navController: NavController, initialTab: Int = 0) {
 
 @Composable
 fun LoginContent(navController: NavController, dimens: com.huertohogar.huertohogar_app.utils.ResponsiveDimensions) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    // ✅ CREDENCIALES PRE-CARGADAS PARA DEMOSTRACIÓN
+    var username by remember { mutableStateOf("admin@huertohogar.com") }
+    var password by remember { mutableStateOf("huertohogar2025") }
     var showError by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(true) }
+    
+    // ✅ Evitar que el teclado se abra automáticamente
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(Unit) {
+        focusManager.clearFocus()
+    }
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Campo Usuario
@@ -418,9 +427,14 @@ fun LoginContent(navController: NavController, dimens: com.huertohogar.huertohog
         // Botón moderno
         Button(
             onClick = {
-                if (username == "prueba" && password == "prueba") {
+                // ✅ VALIDACIÓN DE CREDENCIALES (acepta credenciales pre-cargadas o las antiguas)
+                if ((username == "admin@huertohogar.com" && password == "huertohogar2025") ||
+                    (username == "prueba" && password == "prueba")) {
+                    // Navegar a home después de login exitoso
                     navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
                         popUpTo("auth") { inclusive = true }
+                        launchSingleTop = true
                     }
                 } else {
                     showError = true
@@ -476,8 +490,7 @@ fun RegisterContent(navController: NavController, dimens: com.huertohogar.huerto
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Campo Nombre

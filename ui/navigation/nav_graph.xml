@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="ui.home.HomeFragment"
+        android:label="Pantalla de Inicio">
+        <action
+            android:id="@+id/actionHomeFragmentToListadoFragment"
+            app:destination="@id/listadoFragment"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/slide_out_right">
+            <argument
+                android:name="productos"
+                app:argType="data.model.Producto[]" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/listadoFragment"
+        android:name="ui.listado.ListadoFragment"
+        android:label="Listado de Productos">
+        <action
+            android:id="@+id/actionListadoFragmentToDetalleFragment"
+            app:destination="@id/detalleFragment">
+            <argument
+                android:name="producto"
+                app:argType="data.model.Producto" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/detalleFragment"
+        android:name="ui.detalle.DetalleFragment"
+        android:label="Detalle del Producto" />
+</navigation>

@@ -549,7 +549,7 @@ fun PedidoDetalleDialog(
                                 Spacer(modifier = Modifier.width((screenWidth * 0.032f).coerceIn(10.dp, 14.dp)))
                                 Column {
                                     Text(
-                                        item.product.name,
+                                        item.product.name ?: "Producto",
                                         fontSize = (screenWidth.value * 0.04f).coerceIn(14f, 17f).sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF05161B),

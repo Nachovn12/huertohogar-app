@@ -2,6 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")
+    id("kotlin-parcelize")
+    id("androidx.navigation.safeargs.kotlin") version "2.7.7"
 }
 
 android {
@@ -39,6 +42,16 @@ android {
     }
 }
 
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+    }
+}
+
 dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
@@ -67,6 +80,16 @@ dependencies {
     
     // JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Retrofit (HTTP client)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // Debug tools
     debugImplementation("androidx.compose.ui:ui-tooling")

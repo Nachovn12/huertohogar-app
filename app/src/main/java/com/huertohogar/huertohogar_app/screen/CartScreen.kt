@@ -318,7 +318,7 @@ fun CartItemRow(item: CartItem, onQuantityChange: (Int) -> Unit) {
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                item.product.name,
+                item.product.name ?: "Producto",
                 color = Color(0xFF05161B),
                 fontSize = fontSize,
                 fontWeight = FontWeight.Bold,

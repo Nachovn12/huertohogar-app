@@ -26,7 +26,7 @@ fun SplashScreen(navController: NavController) {
 
     var startAnimation by remember { mutableStateOf(false) }
     
-    // Animación de escala con bounce elegante
+    // Animación de escala con bounce
     val logoScale by animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0f,
         animationSpec = spring(

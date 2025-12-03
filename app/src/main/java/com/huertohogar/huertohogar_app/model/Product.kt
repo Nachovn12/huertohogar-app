@@ -1,22 +1,38 @@
 package com.huertohogar.huertohogar_app.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * Modelo de datos para productos del e-commerce
- * Cambié el modelo para enfocarlo en productos de comida fresca en lugar de jardinería
+ * Soporta tanto JSON local (inglés) como API remota (español)
  */
 data class Product(
-    val sku: String,              // Código único del producto
-    val name: String,             // Nombre del producto
-    val description: String?,     // Descripción detallada
-    val price: Double,            // Precio en CLP
-    val stock: Double?,           // Cantidad disponible
-    val stock_unit: String?,      // Unidad de medida (kg, unidades, etc.)
-    val category: String?,        // Categoría (Frutas, Verduras, etc.)
-    val imageUrl: String?,        // URL o nombre de la imagen
-    
-    // Campos específicos para productos alimenticios
-    val freshness: String?,       // "Extra Fresco", "Fresco", "Del día"
-    val origin: String?,          // "Local", "Valle del Maule", "Orgánico"
-    val storage: String?,         // "Refrigerar", "Temperatura ambiente"
-    val availability: String?     // "En Stock", "Stock limitado"
+    @SerializedName("sku")
+    val sku: String = "",         // Código único del producto
+
+    @SerializedName(value = "nombre", alternate = ["name"])
+    val name: String? = null,     // Nombre del producto (soporta "nombre" o "name")
+
+    @SerializedName(value = "descripcion", alternate = ["description"])
+    val description: String? = null,     // Descripción detallada
+
+    @SerializedName(value = "precio", alternate = ["price"])
+    val price: Double = 0.0,      // Precio en CLP (soporta "precio" o "price")
+
+    @SerializedName(value = "categoria", alternate = ["category"])
+    val category: String?,        // Categoría (soporta "categoria" o "category")
+
+    @SerializedName(value = "imagen", alternate = ["imageUrl"])
+    val imageUrl: String?,        // URL de la imagen (soporta "imagen" o "imageUrl")
+
+    @SerializedName("stock_por_sucursal")
+    val stockBySucursal: Map<String, Int>? = null,  // Stock por sucursal
+
+    // Campos adicionales del JSON local
+    val stock: Double? = null,
+    val stock_unit: String? = null,
+    val freshness: String? = null,
+    val origin: String? = null,
+    val storage: String? = null,
+    val availability: String? = null
 )

@@ -94,7 +94,7 @@ fun DetalleProductoScreen(
 
                     Column(Modifier.padding(horizontal = 24.dp)) {
                         Text(
-                            product!!.name,
+                            product!!.name ?: "Producto",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1B1C1E)

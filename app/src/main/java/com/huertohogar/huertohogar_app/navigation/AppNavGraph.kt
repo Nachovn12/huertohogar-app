@@ -49,7 +49,20 @@ fun AppNavGraph(
         composable("home") { 
             HomeScreen(navController, productViewModel, userViewModel) 
         }
-        
+
+        // RUTA: Listado de productos (acepta parámetro opcional 'source' vía query)
+        composable(
+            route = "listado_productos?source={source}",
+            arguments = listOf(navArgument("source") {
+                type = NavType.StringType
+                defaultValue = "none"
+                nullable = true
+            })
+        ) { backStackEntry ->
+            val source = backStackEntry.arguments?.getString("source") ?: "none"
+            ListadoProductosScreen(navController, productViewModel, source)
+        }
+
         // Navegación con parámetros
         composable(
             route = "categoria/{categoria}",
