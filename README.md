@@ -256,9 +256,11 @@ adb install app\build\outputs\apk\debug\app-debug.apk
 
 ## 👨‍💻 Autor
 
-**Desarrollado con GitHub Copilot**  
 **Evaluación 3 - Desarrollo de Aplicaciones Móviles**  
 **Fecha:** Enero 2025
+
+Ignacio Valeria
+Benjamin Flores
 
 ---
 
